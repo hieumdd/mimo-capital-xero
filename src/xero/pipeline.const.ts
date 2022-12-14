@@ -1,14 +1,13 @@
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 dayjs.extend(utc);
-import Joi from 'joi';
+import Joi, { string } from 'joi';
 
-import { GetResourcesOptions } from './xero.service';
+import { getResourcesFactory, GetResourcesFn } from './accounting.service';
 
 export type Pipeline = {
-    path: string;
-    parseFn: GetResourcesOptions['parseFn'];
-    offsetFn: GetResourcesOptions['offsetFn'];
+    name: string;
+    get: GetResourcesFn;
     validationSchema: Joi.Schema;
     schema: any[];
 };
@@ -28,9 +27,11 @@ const TIMESTAMP = Joi.string().custom((value?: string) => {
 });
 
 export const JOURNAL: Pipeline = {
-    path: 'Journal',
-    parseFn: (data) => data.Journals,
-    offsetFn: ({ offset, data }) => (data.at(-1) as any)['Journal Number'],
+    name: 'Journals',
+    get: getResourcesFactory({
+        path: 'Journals',
+        offsetFn: ({ data }) => (data.at(-1) as any)['JournalNumber'],
+    }),
     validationSchema: Joi.object({
         JournalID: Joi.string(),
         JournalDate: TIMESTAMP,
@@ -49,9 +50,17 @@ export const JOURNAL: Pipeline = {
                 TaxAmount: Joi.number(),
                 TaxType: Joi.string(),
                 TaxName: Joi.string(),
+                TrackingCategories: Joi.array().items(
+                    Joi.object({
+                        Name: Joi.string(),
+                        Option: Joi.string(),
+                        TrackingCategoryID: Joi.string(),
+                        TrackingOptionID: Joi.string(),
+                    }),
+                ),
             }),
         ),
-    }),
+    }).options({ stripUnknown: true }),
     schema: [
         { name: 'JournalID', type: 'STRING' },
         { name: 'JournalDate', type: 'TIMESTAMP' },
@@ -77,3 +86,5 @@ export const JOURNAL: Pipeline = {
         },
     ],
 };
+
+export const pipelines = { JOURNAL } as { [key: string]: Pipeline };
