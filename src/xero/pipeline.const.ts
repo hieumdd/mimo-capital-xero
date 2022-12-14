@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 dayjs.extend(utc);
-import Joi, { string } from 'joi';
+import Joi from 'joi';
 
 import { getResourcesFactory, GetResourcesFn } from './accounting.service';
 
@@ -30,7 +30,7 @@ export const JOURNAL: Pipeline = {
     name: 'Journals',
     get: getResourcesFactory({
         path: 'Journals',
-        offsetFn: ({ data }) => (data.at(-1) as any)['JournalNumber'],
+        offsetFn: ({ data }) => ((data || []).at(-1) as any)['JournalNumber'],
     }),
     validationSchema: Joi.object({
         JournalID: Joi.string(),

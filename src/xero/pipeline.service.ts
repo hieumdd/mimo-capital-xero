@@ -1,4 +1,5 @@
 import { createWriteStream } from 'node:fs';
+import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
@@ -19,12 +20,14 @@ export const pipelineService = async (pipeline_: Pipeline, options: PipelineServ
         ? dayjs.utc(options.start)
         : dayjs.utc().subtract(7, 'day');
 
+    const data = await pipeline_.get({ xeroTenantId: options['xero-tenant-id'], ifModifiedSince });
+
     return pipeline(
-        await pipeline_.get({ xeroTenantId: options['xero-tenant-id'], ifModifiedSince }),
+        Readable.from(data),
         through2.obj((data, enc, cb) => {
             cb(null, pipeline_.validationSchema.validate(data).value);
         }),
         stringify(),
-        createWriteStream('x.json'),
-    );
+        createWriteStream('test.json'),
+    ).then(() => data.length);
 };

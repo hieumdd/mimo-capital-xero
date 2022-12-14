@@ -29,18 +29,16 @@ export type GetResourcesOptions = {
 
 export type GetResourcesFactoryOptions = {
     path: string;
-    offsetFn: ({ offset, data }: { offset: any; data: object[] }) => any;
+    offsetFn: ({ offset, data }: { offset: any; data: object[] }) => any | undefined;
 };
 
-export type GetResourcesFn = (options: GetResourcesOptions) => Promise<Readable>;
+export type GetResourcesFn = (options: GetResourcesOptions) => Promise<object[]>;
 
 export const getResourcesFactory = (factoryOptions: GetResourcesFactoryOptions) => {
     return async (options: GetResourcesOptions) => {
         const client = await createAccountingClient(options.xeroTenantId);
 
-        const readStream = new Readable({ objectMode: true });
-
-        const get = async (offset?: any): Promise<any> => {
+        const get = async (offset?: any): Promise<object[]> => {
             const data = await client
                 .request({
                     method: 'GET',
@@ -50,24 +48,13 @@ export const getResourcesFactory = (factoryOptions: GetResourcesFactoryOptions) 
                     },
                     params: { offset },
                 })
-                .then(({ data }) => data[factoryOptions.path])
-                .catch((err) => {
-                    readStream.emit('error', err);
-                });
+                .then(({ data }) => data[factoryOptions.path]);
 
-            if (data.length > 0) {
-                const x = factoryOptions.offsetFn({ offset, data });
-                data.forEach((row: object) => readStream.push(row));
-                return get(factoryOptions.offsetFn({ offset, data }));
-            } else {
-                console.log('finished');
-                readStream.push(null);
-                return;
-            }
+            return data.length > 0
+                ? [...data, ...(await get(factoryOptions.offsetFn({ offset, data })))]
+                : data;
         };
 
-        await get();
-
-        return readStream;
+        return get();
     };
 };
