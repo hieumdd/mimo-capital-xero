@@ -1,5 +1,3 @@
-import { config } from 'dotenv';
-config();
 import { XeroClient } from 'xero-node';
 
 export const [XERO_CLIENT_ID, XERO_CLIENT_SECRET] = [

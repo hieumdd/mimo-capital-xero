@@ -1,5 +1,3 @@
-import { config } from 'dotenv';
-config();
 import { http } from '@google-cloud/functions-framework';
 import express from 'express';
 
