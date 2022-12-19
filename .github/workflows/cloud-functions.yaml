@@ -1,17 +1,17 @@
 name: Cloud Functions
 
 on:
-  # push:
-  #   branches:
-  #     - master
-  #     - dev
+  push:
+    branches:
+      - master
+      - dev
   workflow_dispatch:
 
 concurrency: ${{ github.ref }}
 
 env:
-  FUNCTION_NAME: roxtar-gmb-${{ github.ref_name }}
-  GCP_SA: integration@roxtar-365414.iam.gserviceaccount.com
+  FUNCTION_NAME: mimo-capital-xero-${{ github.ref_name }}
+  GCP_SA: integration-1@mimo-capital-1.iam.gserviceaccount.com
 
 jobs:
   deploy:
@@ -21,8 +21,8 @@ jobs:
 
       - uses: actions/setup-node@v3
         with:
-          node-version-file: ".nvmrc"
-          cache: "npm"
+          node-version-file: .nvmrc
+          cache: npm
 
       - run: npm ci
 
