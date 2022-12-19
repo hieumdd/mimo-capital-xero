@@ -1,18 +1,17 @@
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 dayjs.extend(utc);
-import Joi from 'joi';
 
 import { getResourcesFactory, GetResourcesFn } from './accounting.service';
 
 export type Pipeline = {
     name: string;
     get: GetResourcesFn;
-    validationSchema: Joi.Schema;
+    transform: (e: Record<string, any>) => Record<string, any>;
     schema: any[];
 };
 
-const TIMESTAMP = Joi.string().custom((value?: string) => {
+const parseTimestamp = (value?: string) => {
     if (!value) {
         return null;
     }
@@ -23,8 +22,8 @@ const TIMESTAMP = Joi.string().custom((value?: string) => {
         return null;
     }
 
-    return dayjs.utc(match[0]).toISOString();
-});
+    return dayjs.utc(+match[0]).toISOString();
+};
 
 export const JOURNAL: Pipeline = {
     name: 'Journals',
@@ -32,35 +31,33 @@ export const JOURNAL: Pipeline = {
         path: 'Journals',
         offsetFn: ({ data }) => ((data || []).at(-1) as any)['JournalNumber'],
     }),
-    validationSchema: Joi.object({
-        JournalID: Joi.string(),
-        JournalDate: TIMESTAMP,
-        JournalNumber: Joi.string(),
-        CreatedDateUTC: TIMESTAMP,
-        JournalLines: Joi.array().items(
-            Joi.object({
-                JournalLineID: Joi.string(),
-                AccountID: Joi.string(),
-                AccountCode: Joi.string(),
-                AccountType: Joi.string(),
-                AccountName: Joi.string(),
-                Description: Joi.string(),
-                NetAmount: Joi.number(),
-                GrossAmount: Joi.number(),
-                TaxAmount: Joi.number(),
-                TaxType: Joi.string(),
-                TaxName: Joi.string(),
-                TrackingCategories: Joi.array().items(
-                    Joi.object({
-                        Name: Joi.string(),
-                        Option: Joi.string(),
-                        TrackingCategoryID: Joi.string(),
-                        TrackingOptionID: Joi.string(),
-                    }),
-                ),
-            }),
-        ),
-    }).options({ stripUnknown: true }),
+    transform: (row) => ({
+        JournalID: row.JournalID,
+        JournalDate: parseTimestamp(row.JournalDate),
+        JournalNumber: row.JournalNumber,
+        CreatedDateUTC: parseTimestamp(row.CreatedDateUTC),
+        JournalLines: (row.JournalLines || []).map((line: Record<string, any>) => ({
+            JournalLineID: line.JournalLineID,
+            AccountID: line.AccountID,
+            AccountCode: line.AccountCode,
+            AccountType: line.AccountType,
+            AccountName: line.AccountName,
+            Description: line.Description,
+            NetAmount: line.NetAmount,
+            GrossAmount: line.GrossAmount,
+            TaxAmount: line.TaxAmount,
+            TaxType: line.TaxType,
+            TaxName: line.TaxName,
+            TrackingCategories: (line.TrackingCategories || []).map(
+                (trackingCategory: Record<string, any>) => ({
+                    Name: trackingCategory.Name,
+                    Option: trackingCategory.Option,
+                    TrackingCategoryID: trackingCategory.TrackingCategoryID,
+                    TrackingOptionID: trackingCategory.TrackingOptionID,
+                }),
+            ),
+        })),
+    }),
     schema: [
         { name: 'JournalID', type: 'STRING' },
         { name: 'JournalDate', type: 'TIMESTAMP' },
@@ -82,6 +79,17 @@ export const JOURNAL: Pipeline = {
                 { name: 'TaxAmount', type: 'NUMERIC' },
                 { name: 'TaxType', type: 'STRING' },
                 { name: 'TaxName', type: 'STRING' },
+                {
+                    name: 'TrackingCategories',
+                    type: 'RECORD',
+                    mode: 'REPEATED',
+                    fields: [
+                        { name: 'Name', type: 'STRING' },
+                        { name: 'Option', type: 'STRING' },
+                        { name: 'TrackingCategoryID', type: 'STRING' },
+                        { name: 'TrackingOptionID', type: 'STRING' },
+                    ],
+                },
             ],
         },
     ],

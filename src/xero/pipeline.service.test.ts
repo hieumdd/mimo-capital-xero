@@ -11,13 +11,18 @@ it('Get Tenant ID', async () => {
             url: 'https://api.xero.com/connections',
             headers: { Authorization: `Bearer ${tokenSet.access_token}` },
         })
-        .then((res) => res.data)
-        .catch((err) => console.log(err));
+        .then(({ data }) => {
+            console.log(data);
+            expect(data).toBeTruthy();
+        })
+        .catch((err) => {
+            console.log(err);
+        });
 });
 
 it('Pipeline Service', async () => {
     return pipelineService(JOURNAL, {
-        'xero-tenant-id': '9fb264c6-b588-4176-b547-3565402c3ed2',
+        'xero-tenant-id': '2d9a4a47-8c6f-494e-a90d-4d8c8b77e437',
         start: '2022-12-01',
     }).catch((err) => {
         console.log(err);
