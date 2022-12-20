@@ -57,8 +57,10 @@ export const JOURNAL: Pipeline = {
                         TrackingCategoryID: z.string(),
                         TrackingOptionID: z.string(),
                     })
+                    .partial()
                     .array(),
             })
+            .partial()
             .array(),
     }),
     schema: [
