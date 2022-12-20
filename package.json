@@ -12,7 +12,8 @@
         "express": "^4.18.2",
         "json2csv": "^5.0.7",
         "ndjson": "^2.0.0",
-        "xero-node": "^4.31.0"
+        "xero-node": "^4.31.0",
+        "zod": "^3.20.2"
     },
     "devDependencies": {
         "@tsconfig/node16": "^1.0.3",

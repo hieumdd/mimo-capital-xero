@@ -21,7 +21,10 @@ export const pipelineService = async (pipeline_: Pipeline, options: PipelineServ
         : dayjs.utc().subtract(7, 'day');
 
     const data = await pipeline_.get({ xeroTenantId, ifModifiedSince }).then((rows) => {
-        return rows.map((row) => ({ ...pipeline_.transform(row), XeroTenantId: xeroTenantId }));
+        return rows.map((row) => ({
+            ...pipeline_.validationSchema.parse(row),
+            XeroTenantId: xeroTenantId,
+        }));
     });
 
     return load(data, {
