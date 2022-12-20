@@ -1,17 +1,18 @@
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 dayjs.extend(utc);
+import { z, Schema } from 'zod';
 
 import { getResourcesFactory, GetResourcesFn } from './accounting.service';
 
 export type Pipeline = {
     name: string;
     get: GetResourcesFn;
-    transform: (e: Record<string, any>) => Record<string, any>;
+    validationSchema: Schema;
     schema: any[];
 };
 
-const parseTimestamp = (value?: string) => {
+const timestampSchema = z.string().transform((value?) => {
     if (!value) {
         return null;
     }
@@ -23,7 +24,7 @@ const parseTimestamp = (value?: string) => {
     }
 
     return dayjs.utc(+match[0]).toISOString();
-};
+});
 
 export const JOURNAL: Pipeline = {
     name: 'Journals',
@@ -31,32 +32,34 @@ export const JOURNAL: Pipeline = {
         path: 'Journals',
         offsetFn: ({ data }) => ((data || []).at(-1) as any)['JournalNumber'],
     }),
-    transform: (row) => ({
-        JournalID: row.JournalID,
-        JournalDate: parseTimestamp(row.JournalDate),
-        JournalNumber: row.JournalNumber,
-        CreatedDateUTC: parseTimestamp(row.CreatedDateUTC),
-        JournalLines: (row.JournalLines || []).map((line: Record<string, any>) => ({
-            JournalLineID: line.JournalLineID,
-            AccountID: line.AccountID,
-            AccountCode: line.AccountCode,
-            AccountType: line.AccountType,
-            AccountName: line.AccountName,
-            Description: line.Description,
-            NetAmount: line.NetAmount,
-            GrossAmount: line.GrossAmount,
-            TaxAmount: line.TaxAmount,
-            TaxType: line.TaxType,
-            TaxName: line.TaxName,
-            TrackingCategories: (line.TrackingCategories || []).map(
-                (trackingCategory: Record<string, any>) => ({
-                    Name: trackingCategory.Name,
-                    Option: trackingCategory.Option,
-                    TrackingCategoryID: trackingCategory.TrackingCategoryID,
-                    TrackingOptionID: trackingCategory.TrackingOptionID,
-                }),
-            ),
-        })),
+    validationSchema: z.object({
+        JournalID: z.string(),
+        JournalDate: timestampSchema,
+        JournalNumber: z.number(),
+        CreatedDateUTC: timestampSchema,
+        JournalLines: z
+            .object({
+                JournalLineID: z.string(),
+                AccountID: z.string(),
+                AccountCode: z.string(),
+                AccountType: z.string(),
+                AccountName: z.string(),
+                Description: z.string(),
+                NetAmount: z.number(),
+                GrossAmount: z.number(),
+                TaxAmount: z.number(),
+                TaxType: z.string(),
+                TaxName: z.string(),
+                TrackingCategories: z
+                    .object({
+                        Name: z.string(),
+                        Option: z.string(),
+                        TrackingCategoryID: z.string(),
+                        TrackingOptionID: z.string(),
+                    })
+                    .array(),
+            })
+            .array(),
     }),
     schema: [
         { name: 'JournalID', type: 'STRING' },
