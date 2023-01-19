@@ -4,6 +4,7 @@ import express from 'express';
 import { authorizeService, callbackService } from './xero/auth.service';
 import { pipelines } from './xero/pipeline.const';
 import { pipelineService } from './xero/pipeline.service';
+import { PipelineRequestBodySchema } from './xero/xero.dto';
 
 const app = express();
 
@@ -16,16 +17,16 @@ app.use('/callback', ({ url }, res) => {
 });
 
 app.use('/pipeline', ({ body }, res) => {
-    const pipeline = pipelines[body.name];
-
-    if (!pipeline) {
-        res.status(404).json({ err: 'No Pipeline Found' });
-        return;
-    }
-
-    pipelineService(pipeline, { 'xero-tenant-id': body['xero-tenant-id'], start: body.start })
-        .then((result) => res.status(200).json({ result }))
-        .catch((err) => res.status(500).json({ err }));
+    PipelineRequestBodySchema.validateAsync(body)
+        .then((body) => {
+            pipelineService(pipelines[body.name], {
+                'xero-tenant-id': body['xero-tenant-id'],
+                start: body.start,
+            })
+                .then((result) => res.status(200).json({ result }))
+                .catch((err) => res.status(500).json({ err }));
+        })
+        .catch((err) => res.status(400).json({ err }));
 });
 
 http('main', app);

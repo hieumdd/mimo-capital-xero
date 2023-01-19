@@ -14,17 +14,13 @@ export const ensureTokenSet = async () => {
         throw new Error('No Refresh Token');
     }
 
-    if (existingTokenSet.expired()) {
-        console.log('expired');
-        const newTokenSet = await xero.refreshWithRefreshToken(
-            XERO_CLIENT_ID,
-            XERO_CLIENT_SECRET,
-            existingTokenSet.refresh_token,
-        );
-        await storeTokenSet(newTokenSet);
-        return newTokenSet;
-    }
+    const newTokenSet = await xero.refreshWithRefreshToken(
+        XERO_CLIENT_ID,
+        XERO_CLIENT_SECRET,
+        existingTokenSet.refresh_token,
+    );
 
-    console.log('not expired');
-    return existingTokenSet;
+    await storeTokenSet(newTokenSet);
+    
+    return newTokenSet;
 };

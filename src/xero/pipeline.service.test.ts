@@ -23,7 +23,7 @@ it('Get Tenant ID', async () => {
 it('Pipeline Service', async () => {
     return pipelineService(JOURNAL, {
         'xero-tenant-id': '2d9a4a47-8c6f-494e-a90d-4d8c8b77e437',
-        start: '2022-12-01',
+        start: '2022-01-01',
     }).catch((err) => {
         console.log(err);
     });
