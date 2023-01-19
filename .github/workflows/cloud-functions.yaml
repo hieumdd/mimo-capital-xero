@@ -12,6 +12,8 @@ env:
   FUNCTION_NAME: mimo-capital-xero-${{ github.ref_name }}
   GCP_SA: integration-1@mimo-capital-1.iam.gserviceaccount.com
 
+  ENV_FILE: env.yaml
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -37,6 +39,10 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@v0
 
+      - run: |
+          echo "XERO_CLIENT_ID: ${{ secrets.XERO_CLIENT_ID }}" >> ${{ env.ENV_FILE }}
+          echo "XERO_CLIENT_SECRET: ${{ secrets.XERO_CLIENT_SECRET }}" >> ${{ env.ENV_FILE }}
+
       - run: >-
           gcloud functions deploy ${{ env.FUNCTION_NAME }}
           --entry-point=main
@@ -49,3 +55,4 @@ jobs:
           --no-user-output-enabled
           --service-account=${{ env.GCP_SA }}
           --allow-unauthenticated
+          --env-vars-file=${{ env.ENV_FILE }}
