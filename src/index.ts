@@ -2,9 +2,10 @@ import { http } from '@google-cloud/functions-framework';
 import express from 'express';
 
 import { authorizeService, callbackService } from './xero/auth.service';
-import { pipelines } from './xero/pipeline.const';
-import { pipelineService } from './xero/pipeline.service';
-import { PipelineRequestBodySchema } from './xero/xero.dto';
+import { PipelineRequestBodySchema, TaskRequestBodySchema } from './pipeline/pipeline.dto';
+import * as pipelines from './pipeline/pipeline.const';
+import { pipelineService } from './pipeline/pipeline.service';
+import { tasksService } from './pipeline/task.service';
 
 const app = express();
 
@@ -19,10 +20,17 @@ app.use('/callback', ({ url }, res) => {
 app.use('/pipeline', ({ body }, res) => {
     PipelineRequestBodySchema.validateAsync(body)
         .then((body) => {
-            pipelineService(pipelines[body.name], {
-                'xero-tenant-id': body['xero-tenant-id'],
-                start: body.start,
-            })
+            pipelineService(pipelines[body.name], { tenantId: body.tenantId, start: body.start })
+                .then((result) => res.status(200).json({ result }))
+                .catch((err) => res.status(500).json({ err }));
+        })
+        .catch((err) => res.status(400).json({ err }));
+});
+
+app.use('/task', ({ body }, res) => {
+    TaskRequestBodySchema.validateAsync(body)
+        .then((body) => {
+            tasksService(body)
                 .then((result) => res.status(200).json({ result }))
                 .catch((err) => res.status(500).json({ err }));
         })

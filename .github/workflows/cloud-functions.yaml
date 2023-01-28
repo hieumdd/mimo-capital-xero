@@ -10,6 +10,7 @@ concurrency: ${{ github.ref }}
 
 env:
   FUNCTION_NAME: mimo-capital-xero-${{ github.ref_name }}
+  PUBLIC_URL: https://us-central1-mimo-capital-1.cloudfunctions.net/mimo-capital-xero-${{ github.ref_name }}
   GCP_SA: integration-1@mimo-capital-1.iam.gserviceaccount.com
 
   ENV_FILE: env.yaml
@@ -32,6 +33,7 @@ jobs:
       - run: |
           cp package.json dist/package.json
           cp package-lock.json dist/package-lock.json
+          cp tenants.ndjson dist/tenants.json
 
       - uses: google-github-actions/auth@v0
         with:
@@ -42,6 +44,8 @@ jobs:
       - run: |
           echo "XERO_CLIENT_ID: ${{ secrets.XERO_CLIENT_ID }}" >> ${{ env.ENV_FILE }}
           echo "XERO_CLIENT_SECRET: ${{ secrets.XERO_CLIENT_SECRET }}" >> ${{ env.ENV_FILE }}
+
+          echo "PUBLIC_URL: ${{ env.PUBLIC_URL }}" >> ${{ env.ENV_FILE }}
 
       - run: >-
           gcloud functions deploy ${{ env.FUNCTION_NAME }}

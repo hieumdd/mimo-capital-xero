@@ -1,4 +1,3 @@
-import { Readable } from 'node:stream';
 import axios from 'axios';
 import { Dayjs } from 'dayjs';
 
@@ -23,7 +22,7 @@ const createAccountingClient = async (xeroTenantId: string) => {
 };
 
 export type GetResourcesOptions = {
-    xeroTenantId: string;
+    tenantId: string;
     ifModifiedSince: Dayjs;
 };
 
@@ -32,11 +31,9 @@ export type GetResourcesFactoryOptions = {
     offsetFn: ({ offset, data }: { offset: any; data: object[] }) => any | undefined;
 };
 
-export type GetResourcesFn = (options: GetResourcesOptions) => Promise<object[]>;
-
 export const getResourcesFactory = (factoryOptions: GetResourcesFactoryOptions) => {
     return async (options: GetResourcesOptions) => {
-        const client = await createAccountingClient(options.xeroTenantId);
+        const client = await createAccountingClient(options.tenantId);
 
         const get = async (offset?: any): Promise<object[]> => {
             const data = await client

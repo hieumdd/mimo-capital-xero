@@ -1,18 +1,18 @@
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 dayjs.extend(utc);
-import { z, Schema } from 'zod';
+import Joi, { Schema } from 'joi';
 
-import { getResourcesFactory, GetResourcesFn } from './accounting.service';
+import { getResourcesFactory } from '../xero/accounting.service';
 
 export type Pipeline = {
     name: string;
-    get: GetResourcesFn;
+    get: ReturnType<typeof getResourcesFactory>;
     validationSchema: Schema;
     schema: any[];
 };
 
-const timestampSchema = z.string().transform((value?) => {
+const timestampSchema = Joi.string().custom((value) => {
     if (!value) {
         return null;
     }
@@ -32,36 +32,30 @@ export const JOURNAL: Pipeline = {
         path: 'Journals',
         offsetFn: ({ data }) => ((data || []).at(-1) as any)['JournalNumber'],
     }),
-    validationSchema: z.object({
-        JournalID: z.string(),
+    validationSchema: Joi.object({
+        JournalID: Joi.string(),
         JournalDate: timestampSchema,
-        JournalNumber: z.number(),
+        JournalNumber: Joi.number(),
         CreatedDateUTC: timestampSchema,
-        JournalLines: z
-            .object({
-                JournalLineID: z.string(),
-                AccountID: z.string(),
-                AccountCode: z.string(),
-                AccountType: z.string(),
-                AccountName: z.string(),
-                Description: z.string(),
-                NetAmount: z.number(),
-                GrossAmount: z.number(),
-                TaxAmount: z.number(),
-                TaxType: z.string(),
-                TaxName: z.string(),
-                TrackingCategories: z
-                    .object({
-                        Name: z.string(),
-                        Option: z.string(),
-                        TrackingCategoryID: z.string(),
-                        TrackingOptionID: z.string(),
-                    })
-                    .partial()
-                    .array(),
-            })
-            .partial()
-            .array(),
+        JournalLines: Joi.array().items({
+            JournalLineID: Joi.string(),
+            AccountID: Joi.string(),
+            AccountCode: Joi.string(),
+            AccountType: Joi.string(),
+            AccountName: Joi.string(),
+            Description: Joi.string().allow(''),
+            NetAmount: Joi.number(),
+            GrossAmount: Joi.number(),
+            TaxAmount: Joi.number(),
+            TaxType: Joi.string(),
+            TaxName: Joi.string(),
+            TrackingCategories: Joi.array().items({
+                Name: Joi.string(),
+                Option: Joi.string(),
+                TrackingCategoryID: Joi.string(),
+                TrackingOptionID: Joi.string(),
+            }),
+        }),
     }),
     schema: [
         { name: 'JournalID', type: 'STRING' },
@@ -99,5 +93,3 @@ export const JOURNAL: Pipeline = {
         },
     ],
 };
-
-export const pipelines = { JOURNAL } as { [key: string]: Pipeline };
