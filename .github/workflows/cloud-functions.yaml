@@ -33,7 +33,6 @@ jobs:
       - run: |
           cp package.json dist/package.json
           cp package-lock.json dist/package-lock.json
-          cp tenants.ndjson dist/tenants.json
 
       - uses: google-github-actions/auth@v0
         with:
