@@ -1,4 +1,5 @@
 import axios from 'axios';
+import axiosThrottle from 'axios-request-throttle';
 import { Dayjs } from 'dayjs';
 
 import { ensureTokenSet } from './auth.service';
@@ -17,6 +18,8 @@ const createAccountingClient = async (xeroTenantId: string) => {
         };
         return request;
     });
+
+    axiosThrottle.use(client, { requestsPerSecond: 1 });
 
     return client;
 };
